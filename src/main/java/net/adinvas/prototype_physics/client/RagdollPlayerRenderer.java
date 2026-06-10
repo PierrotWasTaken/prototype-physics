@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.world.entity.player.PlayerModelPart;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -22,10 +23,9 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT,bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class RagdollPlayerRenderer {
     private static final Minecraft mc = Minecraft.getInstance();
-
 
     static final Vector3f[] headoff = new Vector3f[]{
             new Vector3f(0.0f, 0.0f, 0.0f),
@@ -51,6 +51,7 @@ public class RagdollPlayerRenderer {
             new Vector3f(-1.9f, 5.5f, 0.0f),
             new Vector3f(0.00f, 0f/16, 0.0f),
     };
+
     @SubscribeEvent
     public static void onRenderPlayer(RenderPlayerEvent.Pre event) {
         AbstractClientPlayer player = (AbstractClientPlayer) event.getEntity();
@@ -60,7 +61,7 @@ public class RagdollPlayerRenderer {
             return;
         }
         if (rag == null || !rag.isActive()) return;
-        event.setCanceled(true); // We’ll manually render the player model
+        event.setCanceled(true); 
 
         PlayerRenderer renderer = event.getRenderer();
         PlayerModel<AbstractClientPlayer> model = renderer.getModel();
@@ -78,20 +79,50 @@ public class RagdollPlayerRenderer {
 
         ResourceLocation skin = player.getSkinTextureLocation();
         VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.entityTranslucent(skin));
+        int light = event.getPackedLight();
 
-        // Render just one part for now (e.g. torso)
-        renderRagdollPart(poseStack, vertexConsumer, player, model.body, torso, torso,torsoff, event.getPackedLight());
-        renderRagdollPart(poseStack, vertexConsumer, player, model.head, head, torso,headoff, event.getPackedLight());
-        renderRagdollPart(poseStack, vertexConsumer, player, model.leftLeg, lleg, torso,llegoff, event.getPackedLight());
-        renderRagdollPart(poseStack, vertexConsumer, player, model.rightLeg, rleg, torso,rlegoff, event.getPackedLight());
-        renderRagdollPart(poseStack, vertexConsumer, player, model.leftArm, larm, torso,larmoff, event.getPackedLight());
-        renderRagdollPart(poseStack, vertexConsumer, player, model.rightArm, rarm, torso,rarmoff, event.getPackedLight());
+        // Base Layer + Second Layer of the skin
+        
+        // Torso / Jacket
+        renderRagdollPart(poseStack, vertexConsumer, model.body, torso, torso, torsoff, light);
+        if (player.isModelPartShown(PlayerModelPart.JACKET)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.jacket, torso, torso, torsoff, light);
+        }
+
+        // Head / Hat
+        renderRagdollPart(poseStack, vertexConsumer, model.head, head, torso, headoff, light);
+        if (player.isModelPartShown(PlayerModelPart.HAT)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.hat, head, torso, headoff, light);
+        }
+
+        // Left Leg / Left Pants
+        renderRagdollPart(poseStack, vertexConsumer, model.leftLeg, lleg, torso, llegoff, light);
+        if (player.isModelPartShown(PlayerModelPart.LEFT_PANTS_LEG)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.leftPants, lleg, torso, llegoff, light);
+        }
+
+        // Right Leg / Right Pants
+        renderRagdollPart(poseStack, vertexConsumer, model.rightLeg, rleg, torso, rlegoff, light);
+        if (player.isModelPartShown(PlayerModelPart.RIGHT_PANTS_LEG)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.rightPants, rleg, torso, rlegoff, light);
+        }
+
+        // Left Arm / Left Sleeve
+        renderRagdollPart(poseStack, vertexConsumer, model.leftArm, larm, torso, larmoff, light);
+        if (player.isModelPartShown(PlayerModelPart.LEFT_SLEEVE)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.leftSleeve, larm, torso, larmoff, light);
+        }
+
+        // Right Arm / Right Sleeve
+        renderRagdollPart(poseStack, vertexConsumer, model.rightArm, rarm, torso, rarmoff, light);
+        if (player.isModelPartShown(PlayerModelPart.RIGHT_SLEEVE)) {
+            renderRagdollPart(poseStack, vertexConsumer, model.rightSleeve, rarm, torso, rarmoff, light);
+        }
     }
 
     public static void renderRagdollPart(
             PoseStack poseStack,
             VertexConsumer vertexConsumer,
-            AbstractClientPlayer player,
             ModelPart part,
             RagdollTransform transform,
             RagdollTransform torso,
@@ -99,13 +130,9 @@ public class RagdollPlayerRenderer {
             int light
     ) {
         if (transform == null) return;
-        part.setPos(pivot[0].x,pivot[0].y,pivot[0].z);
+        part.setPos(pivot[0].x, pivot[0].y, pivot[0].z);
         poseStack.pushPose();
 
-
-        // Translate to physics position relative to player
-
-        // --- Step 2: Move to the model part’s vanilla pivot ---
         Quaternionf torsoRot = new Quaternionf(
                 torso.rotation.x,
                 torso.rotation.y,
@@ -116,7 +143,6 @@ public class RagdollPlayerRenderer {
         Vector3f rotatedPivot = new Vector3f(pivot[1]);
         torsoRot.transform(rotatedPivot);
 
-        // Apply quaternion rotation (world → model space)
         Quaternionf q = new Quaternionf(
                 transform.rotation.x,
                 transform.rotation.y,
@@ -124,19 +150,12 @@ public class RagdollPlayerRenderer {
                 transform.rotation.w
         );
 
-        // Flip Z to match Minecraft’s coordinate system
-        //poseStack.translate(-pivot.x,-pivot.y,-pivot.z);
         poseStack.translate(-rotatedPivot.x, -rotatedPivot.y, -rotatedPivot.z);
         q.rotateZ((float) Math.PI);
         poseStack.mulPose(q);
 
-        //poseStack.translate(pivot.x,pivot.y,pivot.z);
-        // Render part
         part.render(poseStack, vertexConsumer, light, OverlayTexture.NO_OVERLAY);
 
         poseStack.popPose();
     }
-
-
-
 }
