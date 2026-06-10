@@ -270,11 +270,12 @@ public class PlayerPhysics {
             for (RigidBody r :ragdollParts){
                 Vector3f vel = new Vector3f();
                 r.getLinearVelocity(vel);
-                if (vel.y < -80f) vel.y = -80f;
+                // if (vel.y < -80f) vel.y = -80f;
                 float speed = vel.length();
-                if (speed > 90f) {
-                    vel.scale(90f / speed);
-                }
+                // if (speed > 90f) {
+                //     vel.scale(90f / speed);
+                // }
+                // Removed caps so ppl can fall fast and in my opinion, realistically
                 r.setLinearVelocity(vel);
             }
             applyFluidForces();
