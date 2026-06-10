@@ -1,4 +1,4 @@
-# I don't plan to give this updates every always
+# I don't plan to give this updates always
 
 This'll just only get bug fixes, or just improvements
 - Like the ragdoll rendering the second skin layer.
