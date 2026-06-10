@@ -9,4 +9,4 @@ This'll just only get bug fixes, or just improvements
 this will ONLY update if the original is updated, and the update is actually needed.
 
 i do NOT know java, so if you encounter an error, create an issue for here.
-but if it ALSO happens on the original, then go again and create an issue on there
+but if it ALSO happens on the original, then create an issue on there
