@@ -77,6 +77,8 @@ public class GameRendererMixin {
 
             // Add to target
             target.add(offset);
+        } else {
+            // add tilting to the camera and override smoothing
         }
 
         // --- Smooth move camera toward new target ---
