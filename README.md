@@ -1,5 +1,7 @@
 # I don't plan to give this updates always
 
+### Though do please download this from modrinth, instead of "Releases" Because I will also post buggy versions on that, but less buggy versions on modrinth
+
 This'll just only get bug fixes, or just improvements
 - Like the ragdoll rendering the second skin layer.
 - The user becoming a beyblade/doing a very fast cart wheel
